@@ -67,8 +67,8 @@ success  Semgrep scan
 ```text
 env:
   SEMGREP_APP_TOKEN:
-  environment - running in environment github-actions, triggering event is pull_request
-  Using git merge base detected from environment for diff scans: aa480d0
+  triggering event is pull_request
+  Using git merge base detected for diff scans: aa480d0
   Scanning 3 files tracked by git with 1074 Code rules
  • Findings: 0 (0 blocking)
  • Scan was limited to files changed since baseline commit.
