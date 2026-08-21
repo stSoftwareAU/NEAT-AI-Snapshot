@@ -1,0 +1,34 @@
+name: Semgrep
+
+# Static application security testing (SAST) on every pull request.
+#
+# The scanner runs inside the official Semgrep image, pinned by sha256 digest,
+# and actions are pinned to 40-character commit SHAs, so a repointed tag cannot
+# swap the scanner or exfiltrate CI secrets.
+#
+# SEMGREP_APP_TOKEN is optional. This organisation does not define it, so the
+# scan runs token-less against the open-source `p/default` ruleset; adding the
+# secret later enables the Semgrep AppSec Platform with no workflow change.
+# Either way `semgrep ci` exits non-zero on a blocking finding, so a failure is
+# never silent.
+
+on:
+  pull_request:
+    branches: ["*"]
+
+permissions:
+  contents: read
+
+jobs:
+  semgrep:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      image: semgrep/semgrep:1.173.0@sha256:67319956da3dcb58baf5b322899c15458e3963e7018a86aeeb5cd224e69cb77a
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Semgrep scan
+        run: semgrep ci --config p/default
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
