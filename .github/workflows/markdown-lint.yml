@@ -1,0 +1,51 @@
+name: Markdown Lint
+
+# Lint every tracked Markdown file with markdownlint-cli2.
+#
+# File selection and rule configuration live in `.markdownlint-cli2.jsonc`
+# (added by #10), so the linter is invoked with no positional globs — CI and a
+# local run therefore check exactly the same set of files. `docs/archive/**` is
+# excluded there: those are point-in-time snapshots that are not retroactively
+# reformatted.
+#
+# Actions are pinned to 40-character commit SHAs, and markdownlint-cli2 is
+# pinned to an exact npm version, so neither a repointed tag nor a hijacked
+# `latest` can change what runs in CI.
+#
+# The issue template offered an optional Deno `check-mermaid` step guarded on
+# `worker/deno/mod.ts`. That module belongs to the worker repository and does
+# not exist here, so the guard could only ever evaluate false — the dead steps
+# were left out rather than committed as permanent no-ops.
+
+on:
+  pull_request:
+    branches: ["*"]
+  push:
+    # This repository's default branch is `Develop`; `main` is kept in step
+    # with `pages.yml`. The template's `master` is not a branch here.
+    branches:
+      - Develop
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  markdownlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # checkout and setup-node run on the Node 24 runtime; the v4 line ran on
+      # Node 20, deprecated for forced upgrade 2026-06-02 and removed
+      # 2026-09-16.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "lts/*"
+
+      - name: Install markdownlint-cli2
+        run: npm install -g markdownlint-cli2@0.23.2
+
+      - name: Run markdownlint-cli2
+        run: markdownlint-cli2
