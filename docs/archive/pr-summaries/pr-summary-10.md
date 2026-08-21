@@ -67,7 +67,6 @@ success  Semgrep scan
 ```text
 env:
   SEMGREP_APP_TOKEN:
-  triggering event is pull_request
   Using git merge base detected for diff scans: aa480d0
   Scanning 3 files tracked by git with 1074 Code rules
  • Findings: 0 (0 blocking)
