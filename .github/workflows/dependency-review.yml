@@ -1,0 +1,42 @@
+name: Dependency Review
+
+# Block pull requests that introduce a vulnerable dependency.
+#
+# The action asks GitHub's dependency-graph compare API what a pull request
+# adds, removes, or changes, then fails the job if any added dependency carries
+# a known advisory. Every dependency change is also listed in the job summary,
+# so a reviewer sees the delta whether or not it trips an advisory.
+#
+# Scope note, measured rather than assumed: this repository declares no package
+# manifests, so its only tracked dependencies are the GitHub Actions in these
+# workflows — and those are all pinned to 40-character commit SHAs. GitHub
+# records the SHA itself as the "version", which cannot be compared against a
+# semver advisory range, so a SHA-pinned action never matches an advisory. The
+# advisory gate therefore bites on a concretely versioned dependency (an npm or
+# similar manifest, or an action pinned to an exact tag), not on today's
+# SHA-pinned set. It is a standing guard for what this repository may add, plus
+# per-PR visibility of every dependency change, rather than a check that fires
+# on the current tree.
+#
+# Actions here are pinned to 40-character commit SHAs so a repointed tag cannot
+# swap the reviewer or exfiltrate CI secrets.
+#
+# `fail-on-severity` is deliberately left at its default (`low`): every known
+# advisory fails the job loudly rather than being filtered into silence.
+
+on:
+  pull_request:
+    branches: ["*"]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Dependency review
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
