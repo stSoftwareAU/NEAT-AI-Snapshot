@@ -13,9 +13,11 @@ verifying the template's assumptions against this repository:
 - **`pages.yml` was pinned to commit SHAs.** Semgrep's `p/default` ruleset
   contains `yaml.github-actions.security.github-actions-mutable-action-tag`,
   which flags the four `@v3`/`@v4`/`@v5` tags in `pages.yml` as *blocking*.
-  Without this fix the new gate would have failed red on day one, on every PR.
+  Because `semgrep ci` is diff-aware in a PR (see below), those findings would
+  not have broken unrelated PRs — but they would have failed the **next PR that
+  touched `pages.yml`**, on pre-existing problems that PR did not introduce.
   Pinning is also this repository's stated supply-chain policy — `gitleaks.yml`
-  already does it.
+  already does it — so the landmine was defused rather than left armed.
 
 ### `SEMGREP_APP_TOKEN` is optional here
 
@@ -42,10 +44,44 @@ flowchart TD
     PR[Pull request opened] --> C[Job container<br/>semgrep/semgrep:1.173.0<br/>pinned by sha256 digest]
     C --> CO[actions/checkout<br/>pinned to 40-char SHA]
     CO --> S[semgrep ci --config p/default<br/>token optional]
-    S --> Q{Blocking finding?}
+    S --> D[Diff-aware: scan files changed<br/>since the PR merge base]
+    D --> Q{Blocking finding?}
     Q -->|no| P[exit 0 — job passes]
     Q -->|yes| F[exit 1 — job fails, rule named]
 ```
+
+### Live CI result — the workflow gated its own PR
+
+The workflow triggers on `pull_request`, so it ran against this change
+([run 32446743644][run], 21s). Every step succeeded, which confirms the two
+things that could only be proven on a real runner: that `actions/checkout`
+executes inside the Alpine-based scanner container, and that `semgrep ci` works
+with `SEMGREP_APP_TOKEN` resolving to an empty string.
+
+```text
+success  Initialize containers
+success  Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+success  Semgrep scan
+```
+
+```text
+env:
+  SEMGREP_APP_TOKEN:
+  environment - running in environment github-actions, triggering event is pull_request
+  Using git merge base detected from environment for diff scans: aa480d0
+  Scanning 3 files tracked by git with 1074 Code rules
+ • Findings: 0 (0 blocking)
+ • Scan was limited to files changed since baseline commit.
+  No blocking findings so exiting with code 0
+```
+
+[run]: https://github.com/stSoftwareAU/NEAT-AI-Snapshot/actions/runs/32446743644
+
+**`semgrep ci` is diff-aware in a pull request.** It resolves the merge base
+itself — no `fetch-depth: 0` required — and scans only the changed files, then
+runs a baseline scan to separate newly introduced findings from pre-existing
+ones. A PR is therefore blocked only by problems it actually introduces, and the
+job stays fast (21 seconds end to end, including the image pull).
 
 ### Supply-chain verification
 
@@ -72,7 +108,9 @@ All four releases are far older than the 24-hour dependency quarantine window.
 ### Behavioural runs
 
 Semgrep 1.173.0 — the exact version the workflow pins — was installed locally
-and the workflow's command run against real repositories:
+and the workflow's command run against real repositories. These runs are
+**full-tree** (no PR context, so no diff baseline), which is deliberate: it
+exercises rules the diff-aware CI run would skip.
 
 | Case | Result |
 |---|---|
@@ -84,8 +122,8 @@ and the workflow's command run against real repositories:
 | Clean tree, `SEMGREP_APP_TOKEN=""` | exit **0** — token-less scanning confirmed working |
 
 The `Develop` row is the important one: it proves the gate is not a no-op on
-this repository, and that the `pages.yml` change in this PR is what makes it
-green.
+this repository's real content, and it is exactly the finding the `pages.yml`
+change removes.
 
 ### Structural assertions
 
@@ -111,13 +149,13 @@ PASS no untrusted `${{ }}` interpolated into a run: block
 
 ### Notes for the reviewer
 
-- The scanner image is Alpine-based (`alpine:3.23`). GitHub's runner mounts a
-  musl Node build into musl containers, which is what lets `actions/checkout`
-  run inside it — this is the configuration Semgrep documents. The workflow
-  triggers on `pull_request`, so it gates the PR that introduces it and this is
-  confirmed live rather than assumed (see the CI result below).
-- `semgrep ci` scans only files tracked by git and skips files over 1 MB, so the
-  16 MB `snapshot.json.gz` is not scanned. The dominant PR type here is the
+- The scanner image is Alpine-based (`alpine:3.23`), so `actions/checkout`
+  depends on the runner mounting a musl Node build into the container. That is
+  the one part of this workflow that cannot be proven locally, which is why the
+  live run above matters — it succeeded on runner 2.336.0 with checkout v7.
+- `semgrep ci` scans only files tracked by git and skips files over 1 MB
+  (observed in the local full-tree runs: `Files larger than 1.0 MB: 1`), so the
+  16 MB `snapshot.json.gz` is never scanned. The dominant PR type here is the
   automated snapshot refresh, which therefore cannot be blocked by this gate.
 - This repository has no `quality.sh`; it holds snapshot data and workflow YAML
   only. `actionlint` plus the checks above are the applicable gates.
@@ -141,6 +179,8 @@ output, not on source text:
 - Run it with one `pages.yml` pin reverted to a mutable tag → exit 1.
 - Run it token-less (`SEMGREP_APP_TOKEN=""`) on clean and vulnerable trees →
   exit 0 and exit 1 respectively.
+- Let the workflow run against its own pull request on a real GitHub runner →
+  all steps succeeded, 0 findings, exit 0.
 
 Once merged, the workflow itself is the ongoing gate: it runs on every pull
 request against any branch.
