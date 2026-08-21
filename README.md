@@ -7,7 +7,7 @@ Default creature/genome snapshot data for the NEAT-AI project. The repository se
 The NEAT-AI project is split across seven public repositories. Each focuses on one concern and composes with the others as shown below.
 
 | Repository | Role |
-|------------|------|
+| ---------- | ---- |
 | [NEAT-AI](https://github.com/stSoftwareAU/NEAT-AI) | Primary Deno/TypeScript neural-network engine (evolution, training, WASM activation). |
 | [NEAT-AI-core](https://github.com/stSoftwareAU/NEAT-AI-core) | Shared native Rust library (`neat-core`) with numerics, topology helpers, and the chunked `.bin` training stream. |
 | [NEAT-AI-Discovery](https://github.com/stSoftwareAU/NEAT-AI-Discovery) | Rust discovery module invoked by NEAT-AI via Deno FFI to search architectures and hyper-parameters. |

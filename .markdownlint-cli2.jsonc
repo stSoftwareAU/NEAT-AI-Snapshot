@@ -1,0 +1,35 @@
+// Markdown lint configuration for NEAT-AI Snapshot (Issue #10).
+//
+// The quality gate drives `markdownlint-cli2` with no positional globs, so
+// this file supplies the file selection. Without it the linter prints its
+// usage banner and exits non-zero, which the gate reports as a failure.
+//
+// Notes:
+// - MD013 (line-length) is disabled — prose and tables here wrap to readable
+//   widths in the editor and CI does not need to enforce a column limit.
+// - MD024 (no-duplicate-heading) uses siblings_only mode — documents repeat
+//   section headings (Summary, Test Plan, etc.) under different parents.
+// - MD041 (first-line-h1) is disabled — generated PR-summary documents start
+//   with `## Summary` rather than a top-level heading.
+// - MD033 (inline HTML) is disabled — docs use <details>/<summary>/<br>.
+// - The historical archive under docs/archive is a set of point-in-time
+//   snapshots that are not retroactively reformatted, so it is excluded.
+//
+// Australian English spelling used throughout (behaviour, colour, etc.).
+{
+  "config": {
+    "default": true,
+    "MD013": false,
+    "MD024": { "siblings_only": true },
+    "MD033": false,
+    "MD041": false
+  },
+  "globs": [
+    "**/*.md"
+  ],
+  "ignores": [
+    "docs/archive/**",
+    "node_modules/**",
+    ".git/**"
+  ]
+}
