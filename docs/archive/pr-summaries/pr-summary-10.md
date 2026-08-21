@@ -64,9 +64,10 @@ success  Run actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 success  Semgrep scan
 ```
 
+The runner logged the step's token env var with an empty value, and the scan
+proceeded regardless:
+
 ```text
-env:
-  SEMGREP_APP_TOKEN:
   Using git merge base detected for diff scans: aa480d0
   Scanning 3 files tracked by git with 1074 Code rules
  • Findings: 0 (0 blocking)
