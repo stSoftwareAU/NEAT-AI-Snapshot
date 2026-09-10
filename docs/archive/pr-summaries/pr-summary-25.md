@@ -27,7 +27,8 @@ Four decisions worth a reviewer's attention:
 - **Pull request trigger only.** A lint gate that also ran on push to `Develop`
   would be reporting a regression that had already landed; the check belongs on
   the pull request that introduces it.
-- **`persist-credentials: false` on checkout.** The job only reads the tree.
+- **The checkout step opts out of persisting its token.** It sets
+  `persist-credentials` off, because the job only reads the tree.
 
 `actionlint` is invoked with no positional arguments, so it discovers the same
 file set a local `actionlint` run does — CI and a developer's machine check
