@@ -1,0 +1,54 @@
+name: Actionlint
+
+# Lint every workflow under `.github/workflows/` with actionlint.
+#
+# actionlint is the standard linter for workflow YAML: it catches schema
+# errors, invalid `${{ }}` expressions, unknown contexts, bad `runs-on`
+# labels, and — because `shellcheck` is preinstalled on the GitHub-hosted
+# runner — shellcheck findings inside every `run:` block. Without it, a
+# workflow regression is only discovered when the broken workflow next runs.
+#
+# Installation follows the same pattern as the gitleaks CLI fallback in
+# `gitleaks.yml`: an exact release version, downloaded over TLS and verified
+# against a recorded SHA-256 before it is executed. No third-party action is
+# introduced, so there is no extra tag to repoint; `actions/checkout` is pinned
+# to a 40-character commit SHA as everywhere else in this repository.
+#
+# `actionlint` is invoked with no positional arguments, so it discovers the
+# same `.github/workflows/*.yml` set a local run does — CI and a developer's
+# machine check exactly the same files. It exits non-zero on any finding, so a
+# workflow regression fails the build loudly rather than being reported and
+# ignored.
+
+on:
+  pull_request:
+    # `**` (not `*`) so the filter also matches slash-bearing branches such as
+    # `milestone/<slug>`; `*` stops at the first `/` and would leave milestone
+    # pull requests silently unchecked.
+    branches: ["**"]
+
+permissions:
+  contents: read
+
+jobs:
+  actionlint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job only reads the tree; it never pushes.
+          persist-credentials: false
+
+      - name: Run actionlint
+        env:
+          ACTIONLINT_VERSION: "1.7.12"
+          ACTIONLINT_SHA256: "8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8"
+        run: |
+          set -euo pipefail
+          archive="actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/${archive}"
+          curl -sSfL "$url" -o "$archive"
+          echo "${ACTIONLINT_SHA256}  ${archive}" | sha256sum -c -
+          tar -xzf "$archive" actionlint
+          ./actionlint -color
