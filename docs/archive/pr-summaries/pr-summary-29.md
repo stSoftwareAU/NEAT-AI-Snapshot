@@ -24,14 +24,14 @@ workflow plus `actionlint`, the same gate `.github/workflows/actionlint.yml`
 runs on every pull request.
 
 ```text
-$ python3 verify_pages.py          # against HEAD (unfixed)
-checkout persist-credentials: None
+$ python3 verify_pages.py pages_before.yml     # the unfixed file, from HEAD~1
+checkout credential persistence: None
 FAIL: checkout still persists the workflow token on disk
 steps: ['actions/checkout', 'actions/configure-pages', 'actions/upload-pages-artifact', 'actions/deploy-pages']
 FAILED                                                       # exit 1
 
-$ python3 verify_pages.py          # after the fix
-checkout persist-credentials: False
+$ python3 verify_pages.py .github/workflows/pages.yml         # after the fix
+checkout credential persistence: False
 steps: ['actions/checkout', 'actions/configure-pages', 'actions/upload-pages-artifact', 'actions/deploy-pages']
 OK                                                           # exit 0
 
