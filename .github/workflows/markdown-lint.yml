@@ -18,14 +18,16 @@ name: Markdown Lint
 # were left out rather than committed as permanent no-ops.
 
 on:
+  # A linter gates the pull request and nothing else. Re-running it on push to
+  # `Develop` only duplicates the run that already gated the PR, burning CI
+  # minutes and risking a red tick on the default branch for a check that has
+  # already passed. Deploy workflows such as `pages.yml` still fire on push —
+  # they publish, they do not check.
   pull_request:
-    branches: ["*"]
-  push:
-    # This repository's default branch is `Develop`; `main` is kept in step
-    # with `pages.yml`. The template's `master` is not a branch here.
-    branches:
-      - Develop
-      - main
+    # `**` (not `*`) so the filter also matches slash-bearing branches such as
+    # `milestone/<slug>`; `*` stops at the first `/` and would leave milestone
+    # pull requests silently unchecked.
+    branches: ["**"]
 
 permissions:
   contents: read
@@ -39,6 +41,9 @@ jobs:
       # Node 20, deprecated for forced upgrade 2026-06-02 and removed
       # 2026-09-16.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job only reads the tree; it never pushes.
+          persist-credentials: false
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
