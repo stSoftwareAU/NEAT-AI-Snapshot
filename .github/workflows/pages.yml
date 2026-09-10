@@ -24,6 +24,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          # This job only reads the tree: it publishes `docs/` as a Pages
+          # artefact and never pushes. Without this the workflow token is
+          # written into `.git/config` as an auth header, readable by every
+          # later step in the job.
+          persist-credentials: false
 
       - name: Configure Pages
         uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b # v5.0.0
