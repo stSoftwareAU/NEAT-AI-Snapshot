@@ -50,7 +50,7 @@ pull_request branches: ['**']
   PR from 'Develop' triggers lint: True
   PR from 'issue-26-foo' triggers lint: True
   PR from 'milestone/scan-20260910' triggers lint: True
-checkout opts out of persisting its token: True
+checkout hardened (no credential persistence) -> True
 OK                                             # exit 0
 
 $ actionlint -color                            # exit 0, no findings
