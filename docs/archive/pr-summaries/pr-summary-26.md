@@ -19,7 +19,8 @@ check set:
   PR instead of the push" fix vacuous on exactly the branches the milestone
   flow uses. Closes #32.
 - The `actions/checkout` step persisted the workflow token although the job
-  only reads the tree. Added `persist-credentials: false`. Closes #28.
+  only reads the tree. The step now sets `persist-credentials` to `false`.
+  Closes #28.
 
 Closes #26.
 
@@ -49,7 +50,7 @@ pull_request branches: ['**']
   PR from 'Develop' triggers lint: True
   PR from 'issue-26-foo' triggers lint: True
   PR from 'milestone/scan-20260910' triggers lint: True
-checkout persist-credentials: False
+checkout opts out of persisting its token: True
 OK                                             # exit 0
 
 $ actionlint -color                            # exit 0, no findings
@@ -79,7 +80,7 @@ locally against the edited file.
 - Parsed-YAML assertions on `.github/workflows/markdown-lint.yml`: no `push`
   trigger, `pull_request.branches` matches `Develop`, a plain issue branch and
   `milestone/scan-20260910`, and the checkout step sets
-  `persist-credentials: false`. Run against `HEAD` first, where it fails on
+  `persist-credentials` to `false`. Run against `HEAD` first, where it fails on
   the `push` trigger, then against the fix, where it passes.
 - `markdownlint-cli2` over the tracked Markdown — 0 issues. (`docs/archive/**`
   is excluded by `.markdownlint-cli2.jsonc`, so this summary file itself is
