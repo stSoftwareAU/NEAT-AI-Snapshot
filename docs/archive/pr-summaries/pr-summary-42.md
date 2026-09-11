@@ -42,7 +42,7 @@ Actions check set (the same reason given in `pr-summary-26.md`):
   request, which targets `milestone/scan-20260910`. Closes #31. Closes #33.
 - The `actions/checkout` steps in both jobs persisted the workflow token in
   `.git/config` as an auth header although neither job pushes. Both now set
-  `persist-credentials: false`. Closes #30. The repository is public, so
+  `persist-credentials` to `false`. Closes #30. The repository is public, so
   `gitleaks.yml`'s anonymous base-branch fetch still resolves, and the
   licensed `gitleaks-action` receives its token through `env:` either way.
 
