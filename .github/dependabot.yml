@@ -40,6 +40,15 @@ updates:
       github-actions:
         patterns:
           - "*"
+    # Wait seven days before proposing an update to a newly published version.
+    # A compromised release is usually caught and yanked within days, so the
+    # cooldown keeps this repository off the leading edge of a supply-chain
+    # attack. It applies to version updates only — Dependabot ignores the
+    # cooldown for security updates, so an advisory against a pinned action
+    # still raises a pull request immediately, which is the alerting path this
+    # file exists to provide.
+    cooldown:
+      default-days: 7
     open-pull-requests-limit: 5
     commit-message:
       prefix: "ci"
