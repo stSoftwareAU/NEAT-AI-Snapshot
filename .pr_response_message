@@ -1,0 +1,8 @@
+Fixed semgrep — the new Dependabot config set no cooldown period, so `dependabot-missing-cooldown` fired and blocked the scan.
+
+**What failed:** `semgrep` / `semgrep ci --config p/default` — 1 blocking finding, `package_managers.dependabot.dependabot-missing-cooldown` on `.github/dependabot.yml:27`, exiting 1.
+**Reproduction:** `semgrep --config p/default .github/dependabot.yml --quiet < /dev/null` reported the same single blocking finding ("This Dependabot configuration does not set a cooldown period"); after the fix, `semgrep --config p/default .github/ --quiet < /dev/null` reports no findings.
+**Root cause:** The `github-actions` entry under `updates` had no `cooldown` block, so the updater would propose a version the day it is published — the window in which a compromised release is most likely still live.
+**The fix:** Added `cooldown: default-days: 7` to the `github-actions` ecosystem entry, the remedy the rule names. This changes the updater's actual behaviour rather than suppressing the rule: version-update pull requests now wait seven days. Dependabot ignores the cooldown for *security* updates, so an advisory against a pinned action still raises a pull request immediately — the alerting path this file was added for is unaffected.
+**Files touched:** `.github/dependabot.yml` — added a commented `cooldown` block with `default-days: 7`.
+**Gate:** No repository quality script exists (`quality_instructions` was empty; the tree holds only `LICENSE`, `README.md`, `docs/` and `.github/`). Ran the check that failed — `semgrep --config p/default` over `.github/` — green, and validated the file parses as YAML.
