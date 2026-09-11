@@ -34,6 +34,15 @@ on:
 permissions:
   contents: read
 
+# Supersede this workflow's own in-flight run when a newer commit lands on the
+# same pull request. On a `pull_request` event `github.ref` is
+# `refs/pull/<n>/merge`, so each pull request gets its own group: only the
+# superseded run of this workflow on this pull request is cancelled, never a
+# run on another pull request or another workflow.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependency-review:
     runs-on: ubuntu-latest

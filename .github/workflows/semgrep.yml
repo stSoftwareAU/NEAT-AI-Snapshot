@@ -14,10 +14,22 @@ name: Semgrep
 
 on:
   pull_request:
-    branches: ["*"]
+    # `**` (not `*`) so the filter also matches slash-bearing branches such as
+    # `milestone/<slug>`; `*` stops at the first `/` and would leave milestone
+    # pull requests silently unchecked.
+    branches: ["**"]
 
 permissions:
   contents: read
+
+# Supersede this workflow's own in-flight run when a newer commit lands on the
+# same pull request. On a `pull_request` event `github.ref` is
+# `refs/pull/<n>/merge`, so each pull request gets its own group: only the
+# superseded run of this workflow on this pull request is cancelled, never a
+# run on another pull request or another workflow.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   semgrep:
@@ -27,6 +39,11 @@ jobs:
       image: semgrep/semgrep:1.173.0@sha256:67319956da3dcb58baf5b322899c15458e3963e7018a86aeeb5cd224e69cb77a
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # This job only reads the tree; it never pushes. Without this the
+          # workflow token is written into `.git/config` as an auth header,
+          # readable by every later step in the job.
+          persist-credentials: false
 
       - name: Semgrep scan
         run: semgrep ci --config p/default
