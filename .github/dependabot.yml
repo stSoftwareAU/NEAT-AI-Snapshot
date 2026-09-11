@@ -1,0 +1,54 @@
+# Dependabot configuration — the repository's alerting/advisory channel.
+#
+# Issue #45 (`SCR-SEC-ALERTING`): three security jobs already run on every pull
+# request (`semgrep`, `gitleaks`, `dependency-review`), but nothing in this
+# repository routed a security-relevant signal to a human. This file is that
+# route. Once a Dependabot config exists, GitHub schedules the updater against
+# the repository, and the pull requests it raises — plus the security updates
+# it raises out-of-band when an advisory lands against something in the tree —
+# arrive as ordinary repository notifications rather than sitting in an
+# advisory feed nobody is subscribed to.
+#
+# Scope, measured rather than assumed: this repository declares no package
+# manifests. Its only tracked dependencies are the GitHub Actions referenced by
+# the workflows under `.github/workflows/`, so `github-actions` is the only
+# ecosystem with anything to update. Adding a manifest later means adding its
+# ecosystem here.
+#
+# Every action in this repository is pinned to a 40-character commit SHA with
+# the tag it resolves to in a trailing comment. The `github-actions` updater
+# understands that shape: it rewrites both the SHA and the version comment, so
+# the pins stay pinned and stay current instead of drifting until an audit
+# notices.
+
+version: 2
+
+updates:
+  - package-ecosystem: "github-actions"
+    # `/` is where the updater looks for `.github/workflows/`; it is not a
+    # path to the workflows directory itself.
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Australia/Brisbane"
+    # One batched pull request a week rather than one per action. A wall of
+    # single-action pull requests is how a real advisory update gets skimmed
+    # past, which is the failure mode this file exists to prevent.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+    # Wait seven days before proposing an update to a newly published version.
+    # A compromised release is usually caught and yanked within days, so the
+    # cooldown keeps this repository off the leading edge of a supply-chain
+    # attack. It applies to version updates only — Dependabot ignores the
+    # cooldown for security updates, so an advisory against a pinned action
+    # still raises a pull request immediately, which is the alerting path this
+    # file exists to provide.
+    cooldown:
+      default-days: 7
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
