@@ -79,8 +79,9 @@ flowchart LR
   repository has no test suite and no `quality.sh`, so no full gate exists to
   run. Its CI checks (markdown lint, gitleaks, semgrep, dependency review) run
   on this PR.
-- `npx markdownlint-cli2@0.23.2 docs/audits/compaction-audit.md README.md
-  docs/archive/pr-summaries/pr-summary-56.md` reported 0 issues.
+- `npx markdownlint-cli2@0.23.2 docs/audits/compaction-audit.md README.md`
+  reported 0 issues. The repository's markdownlint config excludes
+  `docs/archive/**`, so this summary is not linted by the repo's own check.
 
 What was not checked: whether the Discovery producer itself compacts creatures
 before writing the snapshot. That code lives in NEAT-AI-Discovery and is stage
