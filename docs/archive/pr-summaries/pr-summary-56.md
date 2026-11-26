@@ -2,11 +2,12 @@
 
 ## Summary
 
-Audit of NEAT-AI-Snapshot for whole-creature compaction and duplicated
+This audits NEAT-AI-Snapshot for whole-creature compaction and duplicated
 structural rewrites in snapshot, restore and creature serialisation paths. The
-repository holds no executable code, so it has no compaction to replace and no
-serialisation path to switch to the shared Rust core API. As the issue directs
-when no duplicate exists, this PR records the evidence and changes no code.
+repository holds no executable code, so it has no compaction to replace with
+the shared Rust core API. As the issue directs when no duplicate exists, this
+PR records the evidence and adds no runtime code. It adds the audit record
+`docs/audits/compaction-audit.md` and a two-line README pointer to it.
 Closes #56.
 
 ## Spec
@@ -15,49 +16,55 @@ Closes #56.
 
 - Stage 4L of the family-wide migration (NEAT-AI-core#775) asks each consumer
   to replace its own compaction with the shared engine. Repositories that do
-  not compact are to be audited only and must not acquire new runtime
-  compaction.
+  not compact are audited only and must not acquire new runtime compaction.
+- The evidence lives in a permanent audit record, not only in this summary, so
+  the stage 6 ownership guard (NEAT-AI-core#780) and later readers can find
+  this repository's position next to the data.
 
 ### Essential Design Decisions
 
-- No compaction call, dependency pin or adapter is added. The repository has
-  no runtime, so adding one would be the "new compaction call on a previously
+- No compaction call, dependency pin or adapter is added. There is no runtime
+  here, so adding one would be the "new compaction call on a previously
   uncompacted path" the issue forbids.
 - The dependency gates (NEAT-AI-core#779 and NEAT-AI#4196, both still open)
-  only apply to repositories with a path to switch over. This audit does not
+  apply only to repositories with a path to switch over. This audit does not
   wait for them, because nothing here would consume either release.
+- The audit record's creature counts are tied to the audited commit
+  (`bf8eb54`), because the Discovery job replaces the snapshot daily.
 
 ### Undiscoverable Facts
 
 - `docs/snapshot.json.gz` is committed by an external Discovery snapshot job
   (commits titled `Discovery snapshot (auto) <date>`). Any compaction applied
-  to the creature happens in that producer, not here. Its migration is tracked
-  separately as stage 4F (NEAT-AI-Discovery#2586).
+  to the creature happens in that producer, not here. Its migration is stage
+  4F (NEAT-AI-Discovery#2586, open).
+- `pages.yml` publishes the whole of `docs/`, so the new audit record is also
+  served on GitHub Pages, as the archived PR summaries already are.
 
 ## Evidence
 
-Audited at `bf8eb54`, the head of `Develop`:
+The change is documentation only, with no backend, CLI or UI changes. The
+audit was done at `bf8eb54`, the head of `Develop`:
 
-- **Tracked files:** `git ls-files` lists 17 files: five workflow YAMLs,
-  `.gitattributes`, `.gitignore`, `.markdownlint-cli2.jsonc`, `LICENSE`,
-  `README.md`, `docs/index.html`, `docs/Tooltips.json`,
-  `docs/snapshot.json.gz`, and four archived PR summaries. Filtering out
-  Markdown, YAML, JSON, gzip, HTML and licence files leaves nothing: there is
-  no `.ts`, `.js`, `.rs`, `.py` or shell source, and no `deno.json`,
-  `package.json` or `Cargo.toml`.
-- **`docs/index.html`** is a static page with no script. It only links to
-  `snapshot.json.gz`.
+- **Tracked files:** `git ls-files` lists workflow YAML, Markdown,
+  `docs/index.html`, `docs/Tooltips.json`, `docs/snapshot.json.gz`, `LICENSE`
+  and lint/git config. It lists no `.ts`, `.js`, `.rs`, `.py` or shell source,
+  and no `deno.json`, `package.json` or `Cargo.toml`.
+- **`docs/index.html`** has no script; it only links to `snapshot.json.gz`.
 - **Workflows:** `pages.yml` uploads `docs/` unchanged with
-  `actions/upload-pages-artifact`. The other workflows (`dependency-review`,
-  `gitleaks`, `markdown-lint`, `semgrep`) are scanners and linters. None of
-  them reads, rewrites or compacts a creature.
+  `actions/upload-pages-artifact`. `dependency-review`, `gitleaks`,
+  `markdown-lint` and `semgrep` only scan or lint.
 - **Search:** `grep -rniE 'compact|prun|simplif'` over `.github/`,
-  `docs/*.html`, `README.md` and `docs/archive/` finds nothing.
-- **Serialised creature compatibility:** `docs/snapshot.json.gz` decompresses
-  and parses as JSON, with top-level sections `meta`, `creature`, `recording`,
-  `derived` and `tooltips`. `creature` holds `neurons`, `synapses`, `input` and
-  `output`. This PR does not change the file, so downstream readers such as
-  NEAT-AI-Explore see exactly the bytes they saw before.
+  `docs/*.html`, `docs/Tooltips.json` and `README.md` (before this change)
+  finds nothing.
+- **Serialised creature compatibility:** a Python check of the decompressed
+  snapshot found these sections: `meta`, `creature`, `recording`, `derived`
+  and `tooltips`. The `creature` section holds 10,490 neurons (10,486 hidden,
+  3 constant, 1 output) and 67,408 synapses, with `input` 2,511 and `output`
+  1. There were 0 duplicate neuron UUIDs and 0 dangling synapse endpoints
+  outside `input-N` references, and no synapse targets an input. The snapshot
+  file and `pages.yml` are unchanged by this PR, so score semantics and
+  downstream readers such as NEAT-AI-Explore are unaffected.
 
 ```mermaid
 flowchart LR
@@ -69,13 +76,15 @@ flowchart LR
 ## Test Plan
 
 - No test was added or changed, because the diff touches no code. The
-  repository has no test suite and no `quality.sh`. Its CI checks (markdown
-  lint, gitleaks, semgrep, dependency review) run on this PR.
-- Performance and score semantics are unaffected: the snapshot data and the
-  publishing workflow are unchanged.
+  repository has no test suite and no `quality.sh`, so no full gate exists to
+  run. Its CI checks (markdown lint, gitleaks, semgrep, dependency review) run
+  on this PR.
+- `npx markdownlint-cli2@0.23.2 docs/audits/compaction-audit.md README.md
+  docs/archive/pr-summaries/pr-summary-56.md` reported 0 issues.
 
 What was not checked: whether the Discovery producer itself compacts creatures
 before writing the snapshot. That code lives in NEAT-AI-Discovery and is stage
-4F's audit. Remaining risk: none for this repository.
+4F's audit. The issue has no acceptance-criteria list, so no Spec or Standards
+reviewer ran. Remaining risk: none for this repository.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)

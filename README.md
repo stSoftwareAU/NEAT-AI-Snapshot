@@ -2,6 +2,9 @@
 
 Default creature/genome snapshot data for the NEAT-AI project. The repository serves `snapshot.json.gz` from `docs/` via GitHub Pages so [NEAT-AI-Explore](https://github.com/stSoftwareAU/NEAT-AI-Explore) and other downstream tools can fetch a known-good example without re-running training.
 
+This repository holds data only and performs no creature compaction; the
+[compaction audit](docs/audits/compaction-audit.md) records the evidence.
+
 ## Related Repositories
 
 The NEAT-AI project is split across seven public repositories. Each focuses on one concern and composes with the others as shown below.
